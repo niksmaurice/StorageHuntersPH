@@ -18,10 +18,10 @@ SH_BIDDERS_ROLE_ID = 1555555456242552902
 
 BG_IMAGE = "StorageHunters.png"
 LAYOUT = {
-    "avatar_size": (220, 220),   # Shrunk slightly more to ensure it stays inside the neon borders
-    "avatar_offset": (110, 130), # Moved RIGHT (from 85 to 110) and DOWN (from 95 to 130) to center in the ring
-    "text_main_pos": (380, 250), # Moved LEFT (from 450 to 380) so long names have room to breathe
-    "text_sub_pos": (380, 320),  # Moved LEFT to match the main text
+    "avatar_size": (215, 215),  # Resized to fit the inner black circle perfectly
+    "avatar_offset": (65, 120),  # Dead center of the neon ring coordinates
+    "text_main_pos": (380, 250),  # Pulled left so long usernames don't get cut off
+    "text_sub_pos": (380, 320),
     "text_anchor": "ls"
 }
 
@@ -153,6 +153,42 @@ async def rules(ctx):
     msg = await ctx.send(embed=embed)
     await msg.add_reaction("✅")  # Bot adds the checkmark automatically
     await ctx.message.delete()
+
+
+# --- REACTION ROLES (VERIFICATION) ---
+@bot.event
+async def on_raw_reaction_add(payload):
+    # Strictly check for the emoji name instead of string conversion
+    if payload.channel_id == SH_RULES_ID and payload.emoji.name == "✅":
+        guild = bot.get_guild(payload.guild_id)
+        if not guild: return
+        member = guild.get_member(payload.user_id)
+
+        if member and not member.bot:
+            role = guild.get_role(SH_BIDDERS_ROLE_ID)
+            if role:
+                try:
+                    await member.add_roles(role)
+                    print(f"✅ Successfully added Bidders role to {member.name}")
+                except discord.errors.Forbidden:
+                    print("❌ PERMISSION ERROR: The Bot's role is lower than the Bidders role in Server Settings!")
+
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    if payload.channel_id == SH_RULES_ID and payload.emoji.name == "✅":
+        guild = bot.get_guild(payload.guild_id)
+        if not guild: return
+        member = guild.get_member(payload.user_id)
+
+        if member and not member.bot:
+            role = guild.get_role(SH_BIDDERS_ROLE_ID)
+            if role:
+                try:
+                    await member.remove_roles(role)
+                    print(f"Removed Bidders role from {member.name}")
+                except discord.errors.Forbidden:
+                    pass
 
 
 # --- START BOT ---

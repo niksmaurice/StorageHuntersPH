@@ -13,6 +13,8 @@ load_dotenv()
 SH_LOG_ID = 1555548732341227520
 SH_WELCOME_ID = 1555524708672475187
 SH_GOODBYE_ID = 1555524784475996252
+SH_RULES_ID = 1555556556416749649
+SH_BIDDERS_ROLE_ID = 1555555456242552902
 
 BG_IMAGE = "StorageHunters.png"
 LAYOUT = {
@@ -128,7 +130,7 @@ async def rules(ctx):
     embed = discord.Embed(
         title="📦 Storage Hunters PH | Official Directives",
         color=0x00FFFF,
-        description="Welcome to the syndicate. Read the rules below to ensure your locker doesn't get repossessed."
+        description="Welcome to the syndicate. Read the rules below and click the ✅ reaction to verify your account and get the **Bidders** role."
     )
     embed.add_field(name="🤝 1. Respect Your Fellow Hunters",
                     value="No toxicity, harassment, or slurs. Keep the environment clean and welcoming for all players.",
@@ -148,7 +150,8 @@ async def rules(ctx):
 
     embed.set_footer(text="Storage Hunters Philippines • Stay safe out there.")
 
-    await ctx.send(embed=embed)
+    msg = await ctx.send(embed=embed)
+    await msg.add_reaction("✅")  # Bot adds the checkmark automatically
     await ctx.message.delete()
 
 

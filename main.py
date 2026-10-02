@@ -18,10 +18,10 @@ SH_BIDDERS_ROLE_ID = 1555555456242552902
 
 BG_IMAGE = "StorageHunters.png"
 LAYOUT = {
-    "avatar_size": (235, 235),   # Shrunk slightly to fit inside the neon ring
-    "avatar_offset": (85, 95),   # Nudged Right (from 50 to 85) and Up (from 115 to 95)
-    "text_main_pos": (450, 250), # Nudged Right to get away from the garage door
-    "text_sub_pos": (450, 320),  # Nudged Right to align with main text
+    "avatar_size": (220, 220),   # Shrunk slightly more to ensure it stays inside the neon borders
+    "avatar_offset": (110, 130), # Moved RIGHT (from 85 to 110) and DOWN (from 95 to 130) to center in the ring
+    "text_main_pos": (380, 250), # Moved LEFT (from 450 to 380) so long names have room to breathe
+    "text_sub_pos": (380, 320),  # Moved LEFT to match the main text
     "text_anchor": "ls"
 }
 

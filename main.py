@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 import io
 import random
+import asyncio
 from PIL import Image, ImageDraw, ImageFont
 from dotenv import load_dotenv
 
@@ -15,12 +16,13 @@ SH_WELCOME_ID = 1555524708672475187
 SH_GOODBYE_ID = 1555524784475996252
 SH_RULES_ID = 1555556556416749649
 SH_BIDDERS_ROLE_ID = 1555555456242552902
+SH_RULES_MSG_ID = 1555599800035053599  # <--- Added the specific Rules Message ID
 
 BG_IMAGE = "StorageHunters.png"
 LAYOUT = {
-    "avatar_size": (215, 215),  # Resized to fit the inner black circle perfectly
-    "avatar_offset": (65, 120),  # Dead center of the neon ring coordinates
-    "text_main_pos": (380, 250),  # Pulled left so long usernames don't get cut off
+    "avatar_size": (215, 215),
+    "avatar_offset": (65, 120),
+    "text_main_pos": (380, 250),
     "text_sub_pos": (380, 320),
     "text_anchor": "ls"
 }
@@ -123,10 +125,75 @@ async def on_voice_state_update(member, before, after):
             color=0xFAA61A))
 
 
+# --- GIVEAWAY COMMAND ---
+@bot.command(name="giveaway")
+@commands.has_permissions(administrator=True)
+async def giveaway(ctx, duration: str, sponsor: str, *, prize: str):
+    """
+    Usage: !giveaway 10m @Sponsor Name 1 Million Cash
+    """
+    seconds = 0
+    try:
+        if duration.endswith("s"):
+            seconds = int(duration[:-1])
+        elif duration.endswith("m"):
+            seconds = int(duration[:-1]) * 60
+        elif duration.endswith("h"):
+            seconds = int(duration[:-1]) * 3600
+        elif duration.endswith("d"):
+            seconds = int(duration[:-1]) * 86400
+        else:
+            await ctx.send("❌ Format error! Use s, m, h, or d for time (e.g., `10m` for 10 minutes).")
+            return
+    except ValueError:
+        await ctx.send("❌ Format error! Example: `!giveaway 10m @Sponsor 1 Million Cash`")
+        return
+
+    embed = discord.Embed(
+        title="🎉 **NEW GIVEAWAY** 🎉",
+        description=f"**Prize:** {prize}\n**Sponsored by:** {sponsor}\n\nReact with 🎉 to enter!",
+        color=0xFFD700
+    )
+    embed.set_footer(text=f"Ends in {duration} • Storage Hunters PH")
+
+    msg = await ctx.send(embed=embed)
+    await msg.add_reaction("🎉")
+    await ctx.message.delete()
+
+    # Wait for the timer
+    await asyncio.sleep(seconds)
+
+    # Fetch the message again to get the final list of reactions
+    try:
+        fetched_msg = await ctx.channel.fetch_message(msg.id)
+    except:
+        return  # Message was deleted before giveaway ended
+
+    # Find the 🎉 reaction users
+    for reaction in fetched_msg.reactions:
+        if str(reaction.emoji) == "🎉":
+            users = [user async for user in reaction.users() if not user.bot]
+            if not users:
+                await ctx.send(f"Nobody entered the giveaway for **{prize}** 😢")
+                return
+
+            winner = random.choice(users)
+
+            win_embed = discord.Embed(
+                title="🎉 **GIVEAWAY WINNER!** 🎉",
+                description=f"Congratulations {winner.mention}!\nYou won: **{prize}**\nSponsored by: {sponsor}",
+                color=0x43B581
+            )
+            await ctx.send(content=f"{winner.mention}", embed=win_embed)
+            return
+
+
 # --- SERVER RULES COMMAND ---
 @bot.command(name="rules")
 @commands.has_permissions(administrator=True)
 async def rules(ctx):
+    # You can keep this here just in case you ever accidentally delete the channel
+    # But you shouldn't need to run it anymore!
     embed = discord.Embed(
         title="📦 Storage Hunters PH | Official Directives",
         color=0x00FFFF,
@@ -151,15 +218,16 @@ async def rules(ctx):
     embed.set_footer(text="Storage Hunters Philippines • Stay safe out there.")
 
     msg = await ctx.send(embed=embed)
-    await msg.add_reaction("✅")  # Bot adds the checkmark automatically
+    await msg.add_reaction("✅")
     await ctx.message.delete()
+    print(f"NEW RULES MESSAGE ID: {msg.id}")  # Prints the ID to the terminal if you ever need to change it
 
 
 # --- REACTION ROLES (VERIFICATION) ---
 @bot.event
 async def on_raw_reaction_add(payload):
-    # Strictly check for the emoji name instead of string conversion
-    if payload.channel_id == SH_RULES_ID and payload.emoji.name == "✅":
+    # Now strictly locks onto the specific message ID
+    if payload.message_id == SH_RULES_MSG_ID and payload.emoji.name == "✅":
         guild = bot.get_guild(payload.guild_id)
         if not guild: return
         member = guild.get_member(payload.user_id)
@@ -176,7 +244,8 @@ async def on_raw_reaction_add(payload):
 
 @bot.event
 async def on_raw_reaction_remove(payload):
-    if payload.channel_id == SH_RULES_ID and payload.emoji.name == "✅":
+    # Now strictly locks onto the specific message ID
+    if payload.message_id == SH_RULES_MSG_ID and payload.emoji.name == "✅":
         guild = bot.get_guild(payload.guild_id)
         if not guild: return
         member = guild.get_member(payload.user_id)

@@ -6,6 +6,7 @@ import random
 import asyncio
 from PIL import Image, ImageDraw, ImageFont
 from dotenv import load_dotenv
+import time
 
 # Load the .env file for local testing
 load_dotenv()
@@ -149,14 +150,17 @@ async def giveaway(ctx, duration: str, sponsor: str, *, prize: str):
         await ctx.send("❌ Format error! Example: `!giveaway 10m @Sponsor 1 Million Cash`")
         return
 
+    # Calculate the exact timestamp for when the giveaway ends
+    end_time = int(time.time()) + seconds
+
     embed = discord.Embed(
         title="🎉 **NEW GIVEAWAY** 🎉",
-        description=f"**Prize:** {prize}\n**Sponsored by:** {sponsor}\n\nReact with 🎉 to enter!",
+        # The <t:{end_time}:R> tag creates a live countdown right in the message!
+        description=f"**Prize:** {prize}\n**Sponsored by:** {sponsor}\n**Ends:** <t:{end_time}:R>\n\nReact with 🎉 to enter!",
         color=0xFFD700
     )
-    embed.set_footer(text=f"Ends in {duration} • Storage Hunters PH")
+    embed.set_footer(text="Storage Hunters Philippines")
 
-    # --- ADDED @everyone PING HERE ---
     msg = await ctx.send(content="@everyone", embed=embed)
     await msg.add_reaction("🎉")
     await ctx.message.delete()

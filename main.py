@@ -156,7 +156,8 @@ async def giveaway(ctx, duration: str, sponsor: str, *, prize: str):
     )
     embed.set_footer(text=f"Ends in {duration} • Storage Hunters PH")
 
-    msg = await ctx.send(embed=embed)
+    # --- ADDED @everyone PING HERE ---
+    msg = await ctx.send(content="@everyone", embed=embed)
     await msg.add_reaction("🎉")
     await ctx.message.delete()
 
